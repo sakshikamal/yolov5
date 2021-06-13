@@ -13,9 +13,10 @@ from distutils.dir_util import copy_tree
 # Flask utils
 from flask import Flask, redirect, url_for, request, render_template
 from werkzeug.utils import secure_filename
-from gevent.pywsgi import WSGIServer
+#from gevent.pywsgi import WSGIServer
 
 import detect
+
 # Define a flask app
 app = Flask(__name__)
 
@@ -23,8 +24,12 @@ app = Flask(__name__)
 #    os.remove("static\\similar_images\\"+f)
 
 #print('Model loaded. Check http://127.0.0.1:5000/')
+from flask_ngrok import run_with_ngrok
+from flask import Flask
 
-
+app=Flask(__name__)
+run_with_ngrok(app)
+app.config['UPLOAD_FOLDER']='/content/yolov5/uploads'
 @app.route('/', methods=['GET'])
 def index():
     # Main page
@@ -33,67 +38,38 @@ def index():
 
 @app.route('/predict', methods=['GET', 'POST'])
 def upload():
-    if request.method == 'POST':
-        # Get the file from post request
-        f = request.files['file']
+    # if request.method == 'POST':
+    #     # Get the file from post request
+    #     f = request.files['file']
 
-        # Save the file to ./uploads
-        basepath = os.path.dirname(__file__)
-        file_path = os.path.join(
-            basepath, 'uploads', secure_filename(f.filename))
-        f.save(file_path)
+    #     # Save the file to ./uploads
+    #     basepath = os.path.dirname(__file__)
+    #     file_path = os.path.join(
+    #         basepath, 'uploads', secure_filename(f.filename))
+    #     f.save(file_path)
+    #     flash(file_path)
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        file = request.files['file']
+        # if user does not select file, browser also
+        # submit a empty part without filename
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        
+        filename = secure_filename(file.filename)
+        file_path=os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
         # Make prediction
         #similar_glass_details=glass_detection.getUrl(file_path)
-        return detect.detect(weights='/content/drive/MyDrive/best.pt', source=file_path)
+        return detect.detect(weights='/content/drive/MyDrive/best.pt', source=file_path, view_img=True,project='/content/yolov5/runs/detect', save_txt=True)
 
-        # print("Checking for similar images.......")
-        # #getting similar images
-        # test_image = cv2.imread(file_path) 
-        # gray_image = cv2.cvtColor(test_image, cv2.COLOR_BGR2GRAY) 
-        # histogram_test = cv2.calcHist([gray_image], [0],  
-        #                          None, [256], [0, 256])
-
-        # hist_dict={}
-        # for image in os.listdir("data\\Data\\"):
-        #     try:
-        #         img_to_compare = cv2.imread("data\\Data\\"+image) 
-        #         img_to_compare = cv2.cvtColor(img_to_compare, cv2.COLOR_BGR2GRAY) 
-        #         img_to_compare_hist = cv2.calcHist([img_to_compare], [0],  
-        #                                  None, [256], [0, 256])
-        #         c=0
-        #         i = 0
-        #         while i<len(histogram_test) and i<len(img_to_compare_hist): 
-        #             c+=(histogram_test[i]-img_to_compare_hist[i])**2
-        #             i+= 1
-        #         c = c**(1 / 2)
-        #         hist_dict[image]=c[0]
-        #     except:
-        #         print(image)
-        # sort_dict = sorted(hist_dict.items(), key=lambda x: x[1], reverse=False)[1:11]
-        # similar_images=[]
-        # for i in sort_dict:
-        #     similar_images.append("data\\Data\\"+str(i[0]))
-
-        # for f in os.listdir("static\\similar_images\\"):
-        #     if(f=="DetectedGlass1.jpg"):
-        #         pass
-        #     else:
-        #         os.remove("static\\similar_images\\"+f)
-
-        # for count, image in enumerate(similar_images):
-        #     dst=f"static\\similar_images\\"
-        #     #copyfile(image, dst)
-        #     shutil.copy(image, dst, follow_symlinks=True)
-
-        # for count, filename in enumerate(os.listdir("static\\similar_images")): 
-        #     dst ="Glasses" + str(count+1) + ".jpg"
-        #     src ="static\\similar_images\\"+ filename 
-        #     dst ="static\\similar_images\\"+ dst 
-        #     os.rename(src, dst) 
-
-        # return glass_details
-    return None
+    return render_template('upload.html')
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run()
+    

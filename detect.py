@@ -42,6 +42,9 @@ def detect(weights='yolov5s.pt',  # model.pt path(s)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://', 'https://'))
+    
+    #json object to send back to web app
+    obj={'battery':0, 'bulb':0, 'keyboard':0, 'laptop':0, 'mobile phone':0, 'monitor':0, 'mouse':0, 'phone':0}
 
     # Directories
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
@@ -119,7 +122,7 @@ def detect(weights='yolov5s.pt',  # model.pt path(s)
                 for c in det[:, -1].unique():
                     n = (det[:, -1] == c).sum()  # detections per class
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
-
+                    obj[{names[int(c)]}]=n
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
