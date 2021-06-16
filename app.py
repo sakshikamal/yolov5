@@ -66,9 +66,8 @@ def upload():
 
         # Make prediction
         #similar_glass_details=glass_detection.getUrl(file_path)
-        res= detect.detect(weights='/content/drive/MyDrive/best.pt', source=file_path, view_img=True,project='/content/yolov5/runs/detect', save_txt=True)
-        return jsonify(res)
-        
+        return detect.detect(weights='/content/drive/MyDrive/best.pt', source=file_path, view_img=True,project='/content/yolov5/runs/detect', save_txt=True)
+        #return jsonify(res)
     return render_template('upload.html')
 
 if __name__ == '__main__':
